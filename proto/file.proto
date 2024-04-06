@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "github.com/joeymhills/rpi-facial-detection";
+
+service ImageService {
+  rpc UploadImage (ImageRequest) returns (ImageResponse) {}
+}
+
+message ImageRequest {
+  bytes image_data = 1;
+}
+
+message ImageResponse {
+  string message = 1;
+}
