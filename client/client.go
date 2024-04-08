@@ -3,6 +3,7 @@ package client
 /*
 #include <wiringPi.h>
 #include <stdio.h>
+#include "motionSensor.h"
 */
 
 import "C"
@@ -20,6 +21,10 @@ import (
 
 type imageClient struct{
   pb.UnimplementedImageServiceServer
+}
+
+func motionSensor(){
+  C.motionSensor()
 }
 
 func sendImage() {
@@ -66,7 +71,7 @@ func sendImage() {
 
 func InitializeClient() {
   //Calls C code that waits for motion
-  if C.motionSensor() == 0 {
+  if motionSensor() == 0 {
     //Once motion is sensed we take a picture
     sendImage()
 
