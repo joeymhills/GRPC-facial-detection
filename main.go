@@ -4,17 +4,23 @@ import(
     "github.com/joeymhills/rpi-facial-detection/server"
     "github.com/joeymhills/rpi-facial-detection/client"
 
-    "sync"
+    "flag"
 )
 
 func main() {
-    var wg sync.WaitGroup
+
+    mode := flag.String("m", "default", "enter mode")
+
+    flag.Parse()
+
+    switch *mode{
     
-    wg.Add(1)
-    go server.StartServer(&wg)
-
-    wg.Wait()
-
-    client.SendImage()
-
+    case "default":
+        server.StartServer()
+        client.SendImage()
+    case "client":
+        client.SendImage()
+    case "server":
+        server.StartServer()
+    }
 }
