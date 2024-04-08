@@ -17,9 +17,9 @@ func main() {
     
     case "default":
         server.StartServer()
-        client.SendImage()
+        client.InitializeClient()
     case "client":
-        client.SendImage()
+        client.InitializeClient()
     case "server":
         server.StartServer()
     }
