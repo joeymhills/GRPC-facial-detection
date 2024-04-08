@@ -1,14 +1,14 @@
 package client
 
 import (
-	"log"
-	"os"
-	"os/exec"
-    "context"
+  "log"
+  "os"
+  "os/exec"
+  "context"
 
-	"google.golang.org/grpc"
-
-	pb "github.com/joeymhills/rpi-facial-detection/proto"
+  "google.golang.org/grpc"
+  "google.golang.org/grpc/credentials/alts"
+  pb "github.com/joeymhills/rpi-facial-detection/proto"
 )
 
 type imageClient struct{
@@ -16,7 +16,10 @@ type imageClient struct{
 }
 
 func SendImage() {
+
   imagePath := "img/temp.jpg"
+  //address for google vm
+  addr := "34.68.52.223:443"
 
   //TODO: Change command to "libcamera-still -o img/temp.jpg" 
   //executes libcamera to capture image 
@@ -34,7 +37,7 @@ func SendImage() {
   }
 
   // Set up a connection to the server
-  conn, err := grpc.NewClient("127.0.0.1:50051", grpc.WithInsecure())
+  conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(alts.NewClientCreds(alts.DefaultClientOptions())))
   if err != nil {
     log.Fatalln("Failed to dial server:", err)
   }
@@ -42,10 +45,10 @@ func SendImage() {
 
   //Creates client gRPC client
   client := pb.NewImageServiceClient(conn)
-  
+
   ctx := context.Background()
   req := &pb.ImageRequest{
-      ImageData: imageData,
+    ImageData: imageData,
   }
   resp, err := client.UploadImage(ctx, req)
   if err != nil {

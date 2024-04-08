@@ -8,6 +8,7 @@ import (
 	pb "github.com/joeymhills/rpi-facial-detection/proto"
 	vision "google.golang.org/genproto/googleapis/cloud/vision/v1p4beta1"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/alts"
 )
 
 // Implement the ImageServiceServer interface
@@ -29,8 +30,8 @@ func (s *imageServer) UploadImage(ctx context.Context, req *pb.ImageRequest) (*p
 
 //Initializes and returns a GCP Vision client
 func setupVisionClient() (vision.ImageAnnotatorClient, *grpc.ClientConn, error) {
-  ctx := context.Background()
-  conn, err := grpc.DialContext(ctx, "vision.googleapis.com:443", grpc.WithInsecure())
+  addr := "vision.googleapis.com:443"
+  conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(alts.NewClientCreds(alts.DefaultClientOptions())))
   if err != nil {
     return nil, nil, err
   }
