@@ -1,8 +1,6 @@
 #include <wiringPi.h>
 #include <stdio.h>
 
-#define SENSOR_PIN 2
-
 int main() {
     // Initialize WiringPi library
     if (wiringPiSetup() == -1) {
@@ -11,18 +9,17 @@ int main() {
     }
 
     // Set pin mode to input
-    pinMode(SENSOR_PIN, INPUT);
+    pinMode(22, INPUT);
 
     while (1) {
-        // Read the state of the sensor pin
-        int sensorState = digitalRead(SENSOR_PIN);
+        //Reads for motion sensor input
+        if(digitalRead(22) == 0){
+            printf("Motion Detected!\n");
+        }
+            // Add some delay to avoid reading too frequently
+            delay(10);
+        }
 
-        // Print the state
-        printf("Motion sensor state: %d\n", sensorState);
-
-        // Add some delay to avoid reading too frequently
-        delay(1000);  // 1 second delay
+        return 0;
     }
-
-    return 0;
 }
