@@ -1,5 +1,6 @@
 #include <wiringPi.h>
 #include <stdio.h>
+#include <stint.h>
 
 int64_t motionSensor() {
     // Initialize WiringPi library
