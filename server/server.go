@@ -72,7 +72,6 @@ func detectFaces(imageData *[]byte) (*vision.BatchAnnotateImagesResponse, error)
   return resp, nil
 }
 
-//TODO: Remove waitgroup
 func StartServer() {
   //Creates a tcp listener on port 50051
   lis, err := net.Listen("tcp", ":50051")
