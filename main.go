@@ -3,7 +3,6 @@ package main
 import(
     "github.com/joeymhills/rpi-facial-detection/server"
     "github.com/joeymhills/rpi-facial-detection/client"
-
     "flag"
 )
 
@@ -17,9 +16,9 @@ func main() {
     
     case "default":
         server.StartServer()
-        client.InitializeClient()
+        client.WaitForMotion()
     case "client":
-        client.InitializeClient()
+        client.WaitForMotion()
     case "server":
         server.StartServer()
     }

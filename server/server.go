@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"net"
-	"os"
 
 	pb "github.com/joeymhills/rpi-facial-detection/proto"
 	vision "google.golang.org/genproto/googleapis/cloud/vision/v1p4beta1"
