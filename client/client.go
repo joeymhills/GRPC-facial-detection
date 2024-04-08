@@ -1,34 +1,40 @@
 package client
 
 /*
+#cgo CFLAGS: -I/usr/include
+#cgo LDFLAGS: -L/usr/lib -lwiringPi
 #include <wiringPi.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 
+#define COMMAND "libcamera-still -o img/temp.jpg"
+
 int motionSensor() {
   // Initialize WiringPi library
   if (wiringPiSetup() == -1) {
     fprintf(stderr, "Failed to initialize WiringPi\n");
-  return 1;
-}
-//Sets pin 22 to input mode
-pinMode(22, INPUT)
+    return 1;
+  }
+  //Sets pin 22 to input mode
+  pinMode(22, INPUT);
 
-//waits for motion to be detected
-while(digitalRead(22)){
-  sleep(.1);
-return 0;
+  //waits for motion to be detected
+  while(digitalRead(22) != 0) {
+    sleep(.1);
+  }
+  //Once the sensor is triggered then we execute the bash command to take a picture
+  system(COMMAND);
+
+  return 0;
 }
 
-}
 */
 import "C"
 import (
   "log"
   "os"
   "time"
-  "os/exec"
   "context"
 
   "google.golang.org/grpc"
@@ -41,14 +47,6 @@ type imageClient struct{
 }
 
 func sendImage() {
-
-  //Executes libcamera to capture image 
-  cmd := exec.Command("libcamera-still -o img/temp.jpg")
-  err := cmd.Run()
-  if err != nil {
-    log.Println("error with cli:", err)
-    return
-  }
 
   //address for google vm
   addr := "34.68.52.223:443"

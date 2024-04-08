@@ -13,7 +13,6 @@ func main() {
     flag.Parse()
 
     switch *mode{
-    
     case "default":
         server.StartServer()
         client.WaitForMotion()
@@ -21,5 +20,7 @@ func main() {
         client.WaitForMotion()
     case "server":
         server.StartServer()
-    }
+    case "test":
+        server.SetupVisionClient()
+    }      
 }

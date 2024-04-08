@@ -29,7 +29,7 @@ func (s *imageServer) UploadImage(ctx context.Context, req *pb.ImageRequest) (*p
 }
 
 //Initializes and returns a GCP Vision client
-func setupVisionClient() (vision.ImageAnnotatorClient, *grpc.ClientConn, error) {
+func SetupVisionClient() (vision.ImageAnnotatorClient, *grpc.ClientConn, error) {
   addr := "vision.googleapis.com:443"
   conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(alts.NewClientCreds(alts.DefaultClientOptions())))
   if err != nil {
@@ -44,7 +44,7 @@ func detectFaces(imageData *[]byte) (*vision.BatchAnnotateImagesResponse, error)
   ctx := context.Background()
 
   //Gets our vision client and gRPC connection
-  visionClient, conn, err := setupVisionClient()
+  visionClient, conn, err := SetupVisionClient()
   if err != nil {
     log.Fatalln("error in creating connection: ", err)
   }
