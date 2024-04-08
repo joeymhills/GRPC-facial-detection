@@ -1,8 +1,7 @@
 #include <wiringPi.h>
 #include <stdio.h>
-#include <stdint.h>
 
-int64_t motionSensor() {
+int motionSensor() {
     // Initialize WiringPi library
     if (wiringPiSetup() == -1) {
         fprintf(stderr, "Failed to initialize WiringPi\n");
