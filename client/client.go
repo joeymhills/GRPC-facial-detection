@@ -1,10 +1,17 @@
 package client
 
+/*
+#include <wiringPi.h>
+#include <stdio.h>
+*/
+
+import "C"
 import (
   "log"
   "os"
   "os/exec"
   "context"
+  "time"
 
   "google.golang.org/grpc"
   "google.golang.org/grpc/credentials/alts"
@@ -15,20 +22,19 @@ type imageClient struct{
   pb.UnimplementedImageServiceServer
 }
 
-func SendImage() {
+func sendImage() {
 
-  imagePath := "img/temp.jpg"
-  //address for google vm
-  addr := "34.68.52.223:443"
-
-  //TODO: Change command to "libcamera-still -o img/temp.jpg" 
-  //executes libcamera to capture image 
-  cmd := exec.Command("ls", "-l")
+  //Executes libcamera to capture image 
+  cmd := exec.Command("libcamera-still -o img/temp.jpg")
   err := cmd.Run()
   if err != nil {
-    log.Println("error with cli", err)
+    log.Println("error with cli:", err)
     return
   }
+
+  //address for google vm
+  addr := "34.68.52.223:443"
+  imagePath := "img/temp.jpg"
 
   //Reads data from imagePath
   imageData, err := os.ReadFile(imagePath)
@@ -58,4 +64,16 @@ func SendImage() {
   log.Println("Response from server:", resp)
 }
 
+func InitializeClient() {
+  //Calls C code that waits for motion
+  if C.motionSensor() == 0 {
+    //Once motion is sensed we take a picture
+    sendImage()
 
+    //Sleep to prevent taking too many pictures
+    time.Sleep(time.Second*2)
+    
+    //Recursively call InitializeClient() to reinstate motion detection mode
+    InitializeClient()
+  }
+}
