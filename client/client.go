@@ -1,6 +1,7 @@
 package client
 
 /*
+#cgo LDFLAGS: -L -lwiringPi
 #include <wiringPi.h>
 #include <stdio.h>
 #include "motionSensor.h"
