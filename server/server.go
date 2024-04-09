@@ -99,6 +99,4 @@ func StartServer() {
   srv := http.NewServeMux()
   srv.HandleFunc("POST /detect/", handleImage())
   http.Serve(lis, srv)
-  
 }
-

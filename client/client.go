@@ -45,7 +45,7 @@ import (
 func sendImage() {
 
   //address for google vm
-  addr := "34.68.52.223:80"
+  addr := "https://34.68.52.223:80"
   imagePath := "img/temp.jpg"
 
   // Open the image file
