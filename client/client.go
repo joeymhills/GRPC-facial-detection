@@ -35,49 +35,73 @@ import (
   "log"
   "os"
   "time"
-  "context"
-
-  "google.golang.org/grpc"
-  "google.golang.org/grpc/credentials/alts"
-  pb "github.com/joeymhills/rpi-facial-detection/proto"
+  "net/http"
+  "mime/multipart"
+  "bytes"
+  "io"
 )
 
-type imageClient struct{
-  pb.UnimplementedImageServiceServer
-}
-
+//TODO: probably not idiomatic
 func sendImage() {
 
   //address for google vm
-  addr := "34.68.52.223:443"
+  addr := "34.68.52.223:80"
   imagePath := "img/temp.jpg"
 
-  //Reads data from imagePath
-  imageData, err := os.ReadFile(imagePath)
+  // Open the image file
+  file, err := os.Open(imagePath)
   if err != nil {
-    log.Println("error reading image data:", err) 
+      log.Println("Error opening image file:", err)
+      return
   }
-
-  // Set up a connection to the server
-  conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(alts.NewClientCreds(alts.DefaultClientOptions())))
+	defer file.Close()
+  // Create a new HTTP request
+  req, err := http.NewRequest("POST", addr, nil)
   if err != nil {
-    log.Fatalln("Failed to dial server:", err)
+    log.Println("Error creating request:", err)
+    return
   }
-  defer conn.Close()
 
-  //Creates client gRPC client
-  client := pb.NewImageServiceClient(conn)
+  // Create a new form data body
+  body := &bytes.Buffer{}
+  writer := multipart.NewWriter(body)
 
-  ctx := context.Background()
-  req := &pb.ImageRequest{
-    ImageData: imageData,
-  }
-  resp, err := client.UploadImage(ctx, req)
+  // Add the image file to the form data body
+  part, err := writer.CreateFormFile("image", "image.jpg")
   if err != nil {
-    log.Fatalln("error in sending image to server:", err)
+    log.Println("Error creating form file:", err)
+    return
+  }
+  _, err = io.Copy(part, file)
+  if err != nil {
+    log.Println("Error copying file to form:", err)
+    return
   }
 
-  log.Println("Response from server:", resp)
+  // Close the form data writer
+  err = writer.Close()
+  if err != nil {
+    log.Println("Error closing form writer:", err)
+    return
+  }
+
+  // Set the content type header
+  req.Header.Set("Content-Type", writer.FormDataContentType())
+
+  // Set the request body
+  req.Body = io.NopCloser(body)
+
+  // Send the request
+  client := &http.Client{}
+  resp, err := client.Do(req)
+  if err != nil {
+    log.Println("Error sending request:", err)
+    return
+  }
+  defer resp.Body.Close()
+
+  // Print the response status code
+  log.Println("Response status code:", resp.StatusCode)
 }
 
 func WaitForMotion() {
