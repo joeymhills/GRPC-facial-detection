@@ -4,6 +4,9 @@ import (
 	"context"
 	"log"
 	"net"
+	"net/http"
+	"io"
+	"encoding/json"
 
 	pb "github.com/joeymhills/rpi-facial-detection/proto"
 	vision "google.golang.org/genproto/googleapis/cloud/vision/v1p4beta1"
@@ -16,16 +19,29 @@ type imageServer struct{
   pb.UnimplementedImageServiceServer
 }
 
-//Handles the image data when its uploaded from raspberry pi
-func (s *imageServer) UploadImage(ctx context.Context, req *pb.ImageRequest) (*pb.ImageResponse, error) {
-  
-  resp, err := detectFaces(&req.ImageData)
-  if err != nil {
-    log.Fatalln("Error in detectFaces:", err)
-  }
-  log.Println("Response from GCP:", &resp)
+// Handles the image data when it's uploaded from Raspberry Pi
+func handleImage() func(w http.ResponseWriter, r *http.Request) {
+  return func(w http.ResponseWriter, r *http.Request) {
+    // Reads image from request body
+    imageData, err := io.ReadAll(r.Body)
+    if err != nil {
+      log.Fatalln("Error in reading request body:", err)
+      http.Error(w, "Error reading request body", http.StatusBadRequest)
+      return
+    }
 
-  return &pb.ImageResponse{Message: "Image received successfully"}, nil
+    // Sends image to be annotated
+    resp, err := detectFaces(&imageData)
+    if err != nil {
+      log.Fatalln("Error in detectFaces:", err)
+      http.Error(w, "Error processing image", http.StatusInternalServerError)
+      return
+    }
+
+    log.Println("Response from GCP:", resp)
+    // Return response to client
+    json.NewEncoder(w).Encode(resp)
+  }
 }
 
 //Initializes and returns a GCP Vision client
@@ -73,19 +89,16 @@ func detectFaces(imageData *[]byte) (*vision.BatchAnnotateImagesResponse, error)
 }
 
 func StartServer() {
-  //Creates a tcp listener on port 50051
-  lis, err := net.Listen("tcp", ":50051")
+  //Creates a TCP listener
+  lis, err := net.Listen("tcp", ":80")
   if err != nil {
     log.Fatalf("failed to listen: %v", err)
   }
 
-  //Initializes grpc image server
-  srv := grpc.NewServer()
-  pb.RegisterImageServiceServer(srv, &imageServer{})
-  log.Println("Server started")
-
-  if err := srv.Serve(lis); err != nil {
-    log.Fatalf("failed to serve: %v", err)
-  }
+  //Initializes HTTP image server
+  srv := http.NewServeMux()
+  srv.HandleFunc("POST /detect/", handleImage())
+  http.Serve(lis, srv)
+  
 }
 
