@@ -8,7 +8,7 @@ package client
 #include <stdlib.h>
 #include <stdio.h>
 
-#define COMMAND "libcamera-still -o img/temp.jpg"
+#define COMMAND "libcamera-jpeg -o img/temp.jpg"
 
 int motionSensor() {
   // Initialize WiringPi library
@@ -36,11 +36,8 @@ import (
   "os"
   "time"
   "context"
-
   "google.golang.org/grpc"
-
-  "google.golang.org/grpc/insecure"
-  "google.golang.org/grpc/credentials/alts"
+  "google.golang.org/grpc/credentials"
   pb "github.com/joeymhills/rpi-facial-detection/proto"
 )
 
@@ -51,7 +48,7 @@ type imageClient struct{
 func sendImage() {
 
   //address for google vm
-  addr := "34.68.52.223:443"
+  addr := "34.66.85.133:8080"
   imagePath := "img/temp.jpg"
 
   //Reads data from imagePath
@@ -60,15 +57,24 @@ func sendImage() {
     log.Println("error reading image data:", err) 
   }
 
-  // Set up a connection to the server
-  conn, err := grpc.NewClient(addr, grpc.WithInsecure())
+  creds, err := credentials.NewClientTLSFromFile("server/server.crt", "")
   if err != nil {
-    log.Fatalln("Failed to dial server:", err)
+	 log.Fatalf("Failed to load server cert:", err)
   }
+
+  // Dial the gRPC server with TLS credentials
+  conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(creds))
+  if err != nil {
+	 log.Fatalf("Failed to dial server: %v", err)
+  }
+  log.Println("gRPC server dialed successfully")
+
   defer conn.Close()
 
   //Creates client gRPC client
   client := pb.NewImageServiceClient(conn)
+
+  log.Println("gRPC client ready for requests")
 
   ctx := context.Background()
   req := &pb.ImageRequest{
