@@ -74,7 +74,7 @@ func detectFaces(imageData *[]byte) (*vision.BatchAnnotateImagesResponse, error)
 
 func StartServer() {
   
-  port := os.Getenv("PORT")
+  port := os.Getenv("GCP_PORT")
 
   //Load the server's certificate and private key
   cert, err := tls.LoadX509KeyPair("server/server.crt", "server/server.key")
