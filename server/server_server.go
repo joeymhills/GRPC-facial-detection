@@ -5,6 +5,7 @@ import (
   "log"
   "net"
   "crypto/tls"
+  "os"
 
   pb "github.com/joeymhills/rpi-facial-detection/proto"
   vision "google.golang.org/genproto/googleapis/cloud/vision/v1p4beta1"
@@ -72,7 +73,8 @@ func detectFaces(imageData *[]byte) (*vision.BatchAnnotateImagesResponse, error)
 }
 
 func StartServer() {
-
+  
+  port := os.Getenv("PORT")
 
   //Load the server's certificate and private key
   cert, err := tls.LoadX509KeyPair("server/server.crt", "server/server.key")
@@ -90,13 +92,13 @@ func StartServer() {
   pb.RegisterImageServiceServer(grpcServer, &imageServer{})
 
   // Create a TCP listener on port 8080 with TLS configuration
-  listener, err := net.Listen("tcp", ":8080")
+  listener, err := net.Listen("tcp", port)
   if err != nil {
     log.Fatalf("Failed to create listener: %v", err)
   }
 
   // Start the gRPC server with TLS-enabled listener                  
-  log.Println("gRPC server running on port 8080")                     
+  log.Println("gRPC server running on port", port)                     
   if err := grpcServer.Serve(listener); err != nil {                  
     log.Fatalf("Failed to serve: %v", err)                      
   }                                                                   

@@ -36,9 +36,10 @@ import (
   "os"
   "time"
   "context"
+  
+  pb "github.com/joeymhills/rpi-facial-detection/proto"
   "google.golang.org/grpc"
   "google.golang.org/grpc/credentials"
-  pb "github.com/joeymhills/rpi-facial-detection/proto"
 )
 
 type imageClient struct{
@@ -48,7 +49,7 @@ type imageClient struct{
 func sendImage() {
 
   //address for google vm
-  addr := "34.66.85.133:8080"
+  addr := os.Getenv("GCP_ADDR")+os.Getenv("GCP_PORT")
   imagePath := "img/temp.jpg"
 
   //Reads data from imagePath
