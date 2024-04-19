@@ -12,8 +12,9 @@ import (
   "google.golang.org/grpc"
   "google.golang.org/grpc/credentials"
   "google.golang.org/grpc/credentials/alts"
-)
 
+  "cloud.google.com/go/storage"
+)
 // Implement the ImageServiceServer interface
 type imageServer struct{
   pb.UnimplementedImageServiceServer
@@ -74,7 +75,33 @@ func detectFaces(imageData *[]byte) (*vision.BatchAnnotateImagesResponse, error)
 
 func StartServer() {
   
+  ctx := context.Background()
   port := os.Getenv("GCP_PORT")
+  //Creates a gcp bucket clienr
+  _, err := storage.NewClient(context.Background())
+
+  bucketClient, err := storage.NewGRPCClient(ctx)
+  if err != nil {
+    log.Fatalln("Failed to create bucket client", err)
+  }
+
+  imgData, err := os.ReadFile("img/temp.jpg")
+  if err != nil {
+    log.Println("Could read image from file: ", err)
+  }
+
+  uploader := &ClientUploader{
+    cl: bucketClient,
+    projectID: "dsc-333-412716",
+    bucketName: "dsc333-hw2",
+    fileName: "/images/img.jpeg",
+    
+  }
+  
+  err = uploader.StoreImage(&imgData) 
+  if err != nil {
+    log.Println("error in query:", err)
+  }
 
   //Load the server's certificate and private key
   cert, err := tls.LoadX509KeyPair("server/server.crt", "server/server.key")
@@ -101,5 +128,6 @@ func StartServer() {
   log.Println("gRPC server running on port", port)                     
   if err := grpcServer.Serve(listener); err != nil {                  
     log.Fatalf("Failed to serve: %v", err)                      
-  }                                                                   
-}    
+  }
+
+}
