@@ -15,6 +15,7 @@ func InitDb() (*sql.DB, error){
   //grabs credentials from .env file and puts them into the connection string
   conn := fmt.Sprintf("root:%s@tcp(%s)/%s", os.Getenv("SQL_PASS"), os.Getenv("SQL_ADDR"), os.Getenv("DATABASE_NAME"))
   
+  log.Println("attempting to connect to db...")
   db, err := sql.Open("mysql", conn)
   if err != nil {
     return nil, err

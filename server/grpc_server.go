@@ -27,7 +27,7 @@ func InitGrpcServer(){
   port := os.Getenv("GCP_PORT")
 
   //Load the server's certificate and private key
-  cert, err := tls.LoadX509KeyPair("server/server.crt", "server/server.key")
+  cert, err := tls.LoadX509KeyPair("server/cert/server.crt", "server/cert/server.key")
   if err != nil {
     log.Fatalf("Failed to load certificate: %v", err)
   }

@@ -58,7 +58,7 @@ func sendImage() {
     log.Println("error reading image data:", err) 
   }
 
-  creds, err := credentials.NewClientTLSFromFile("server/server.crt", "")
+  creds, err := credentials.NewClientTLSFromFile("server/cert/server.crt", "")
   if err != nil {
 	 log.Fatalf("Failed to load server cert:", err)
   }
