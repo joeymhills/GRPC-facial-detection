@@ -14,6 +14,10 @@ func main(){
     if err != nil {
         log.Fatal("Error loading .env file")
     }
-    server.InitGrpcServer()
-    _, err = server.InitDb()
+
+    go func() {
+        _, err = server.InitDb()
+    }()
+
+    go server.InitGrpcServer()
 }
