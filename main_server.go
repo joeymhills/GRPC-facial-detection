@@ -15,4 +15,5 @@ func main(){
         log.Fatal("Error loading .env file")
     }
     server.InitGrpcServer()
+    _, err = server.InitDb()
 }
