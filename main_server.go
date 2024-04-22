@@ -1,12 +1,13 @@
 //go:build server
-// +build server 
+// +build server
 
 package main
 
-import(
-    "github.com/joeymhills/rpi-facial-detection/server"
-    "github.com/joho/godotenv"
-    "log"
+import (
+	"log"
+
+	"github.com/joeymhills/rpi-facial-detection/server"
+	"github.com/joho/godotenv"
 )
 
 func main(){
@@ -15,9 +16,13 @@ func main(){
         log.Fatal("Error loading .env file")
     }
 
-    go func() {
-        _, err = server.InitDb()
-    }()
+    db, err := server.InitDb()
+    if err != nil{
+        log.Fatalln(err)
+    }
+    
+    if err = server.InitGrpcServer(db); err != nil {
+        log.Fatalln(err)
+    }
 
-    go server.InitGrpcServer()
 }

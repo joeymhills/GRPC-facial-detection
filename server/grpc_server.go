@@ -1,35 +1,53 @@
 package server
 
 import (
-  "context"
-  "log"
-  "net"
-  "crypto/tls"
-  "os"
+	"context"
+	"crypto/tls"
+	"database/sql"
+	"log"
+	"net"
+	"os"
+    "time"
 
-  pb "github.com/joeymhills/rpi-facial-detection/proto"
-  //vision "google.golang.org/genproto/googleapis/cloud/vision/v1p4beta1"
-  "google.golang.org/grpc"
-  "google.golang.org/grpc/credentials"
+	pb "github.com/joeymhills/rpi-facial-detection/proto"
+	//vision "google.golang.org/genproto/googleapis/cloud/vision/v1p4beta1"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
+
 // Implement the ImageServiceServer interface
 type imageServer struct{
   pb.UnimplementedImageServiceServer
+  db *sql.DB
 }
 //Handles the image data when its uploaded from raspberry pi
 func (s *imageServer) UploadImage(ctx context.Context, req *pb.ImageRequest) (*pb.ImageResponse, error){
   log.Println("gRPC endpoint hit!")
-  //DetectFaces(&req.ImageData)
+  
+  handleImage(s.db)
   return &pb.ImageResponse{Message: "Image received successfully"}, nil
 }
-func InitGrpcServer(){
+
+func handleImage(db *sql.DB)(error) {
+  ctx, cancel := context.WithTimeout(context.Background(), time.Second * 5)
+  defer cancel()
+
+  faces, err := Get_Faces(ctx, db)
+  if err != nil{
+    return  err
+  }
+  _ = faces
+
+  return nil
+}
+func InitGrpcServer(db *sql.DB) error{
 
   port := os.Getenv("GCP_PORT")
 
   //Load the server's certificate and private key
   cert, err := tls.LoadX509KeyPair("server/cert/server.crt", "server/cert/server.key")
   if err != nil {
-    log.Fatalf("Failed to load certificate: %v", err)
+    return err
   }
 
   creds := credentials.NewTLS(&tls.Config{
@@ -44,13 +62,13 @@ func InitGrpcServer(){
   // Create a TCP listener on port 8080 with TLS configuration
   listener, err := net.Listen("tcp", port)
   if err != nil {
-    log.Fatalf("Failed to create listener: %v", err)
+    return err
   }
 
   // Start the gRPC server with TLS-enabled listener                  
   log.Println("gRPC server running on port", port)                     
   if err := grpcServer.Serve(listener); err != nil {                  
-    log.Fatalf("Failed to serve: %v", err)                      
+    return err
   }
-
+return err
 }
