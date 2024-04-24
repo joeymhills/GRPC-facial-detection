@@ -4,6 +4,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/joeymhills/rpi-facial-detection/server"
@@ -14,6 +15,10 @@ func main(){
     err := godotenv.Load()
     if err != nil {
         log.Fatal("Error loading .env file")
+    }
+    err = server.InitOpencv()
+    if err != nil {
+        fmt.Println("error when starting opencv", err)
     }
 
     db, err := server.InitDb()
