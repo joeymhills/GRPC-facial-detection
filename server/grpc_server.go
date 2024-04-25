@@ -1,18 +1,18 @@
 package server
 
 import (
-	"context"
-	"crypto/tls"
-	"database/sql"
-	"log"
-	"net"
-	"os"
-    "time"
+  "context"
+  "crypto/tls"
+  "database/sql"
+  "log"
+  "net"
+  "os"
+  "time"
 
-	pb "github.com/joeymhills/rpi-facial-detection/proto"
-	//vision "google.golang.org/genproto/googleapis/cloud/vision/v1p4beta1"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
+  pb "github.com/joeymhills/rpi-facial-detection/proto"
+  //vision "google.golang.org/genproto/googleapis/cloud/vision/v1p4beta1"
+  "google.golang.org/grpc"
+  "google.golang.org/grpc/credentials"
 )
 
 // Implement the ImageServiceServer interface
@@ -23,20 +23,30 @@ type imageServer struct{
 //Handles the image data when its uploaded from raspberry pi
 func (s *imageServer) UploadImage(ctx context.Context, req *pb.ImageRequest) (*pb.ImageResponse, error){
   log.Println("gRPC endpoint hit!")
+
   
-  handleImage(s.db)
+  handleImage(s.db, &req.ImageData)
   return &pb.ImageResponse{Message: "Image received successfully"}, nil
 }
 
-func handleImage(db *sql.DB)(error) {
+func handleImage(db *sql.DB, imgBytes *[]byte) (error) {
   ctx, cancel := context.WithTimeout(context.Background(), time.Second * 5)
   defer cancel()
 
   faces, err := Get_Faces(ctx, db)
-  if err != nil{
+  _ = faces
+
+  var numFaces int
+  var img *[]byte
+  
+  //Check for facial features 
+  numFaces, img, err = HaarCascade(imgBytes)
+  if err != nil {
     return  err
   }
-  _ = faces
+
+  StoreImage(img, "test123.jpg")
+  log.Println("Faces detected: ", numFaces)
 
   return nil
 }
