@@ -124,9 +124,12 @@ func HaarCascade(imgData *[]byte) (faceNum int, markedImage *[]byte, err error) 
     }
     
     //Convert mat object to []byte
-    img.ToImage()
+    newImg, err := img.ToImage()
+    if err != nil {
+	return 0, nil, err
+    }
     var buf bytes.Buffer
-    _ = jpeg.Encode(&buf, img, nil)
+    _ = jpeg.Encode(&buf, newImg, nil)
     returnImg := buf.Bytes()
 
     return len(imgRects), &returnImg, err
