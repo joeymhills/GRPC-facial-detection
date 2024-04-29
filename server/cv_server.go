@@ -1,11 +1,16 @@
 package server
 
 import (
+    "bytes"
+    "context"
     "fmt"
     "image"
     "image/color"
     "image/jpeg"
-    "bytes"
+    "net"
+    "os/exec"
+    "time"
+    "io"
 
     "gocv.io/x/gocv"
 )
@@ -56,33 +61,88 @@ func RectToFeature(r *image.Rectangle, f string) *Feature {
 
     return rect
 }
+func imageToBytes(img gocv.Mat) (*[]byte, error) {
+    //Convert mat object to []byte
+    newImg, err := img.ToImage()
+    if err != nil {
+	return  nil, err
+    }
+    var buf bytes.Buffer
+    _ = jpeg.Encode(&buf, newImg, nil)
+    returnImg := buf.Bytes()
 
-func HaarCascade(imgData *[]byte) (faceNum int, markedImage *[]byte, err error)  {
+    return &returnImg, err
+}
+func TrainModel(name string) error {
+    cmd := exec.Command("python3", "../python/train.py", name)
+    output, err := cmd.CombinedOutput()
+    if err != nil {
+	return err
+    }
+    fmt.Println(output)
 
-    faces := gocv.NewCascadeClassifier()
-    faces.Load("aimodels/haarfrontalface.xml")
-    defer faces.Close()
+    return nil
+}
 
-    nose := gocv.NewCascadeClassifier()
-    nose.Load("aimodels/haarnose.xml")
-    defer nose.Close()
+func CheckFace(imgData *[]byte, model string) (bool, error) {
+    cmd := exec.Command("python3", "python/test.py", model)
+    _, err := cmd.StdoutPipe()
+    if err != nil {
+        fmt.Println("Error creating stdout pipe:", err)
+    }
+    ctx := context.Background()
+    
+    go func(ctx context.Context) {
+	//err = cmd.Start()
+	if err != nil {
+	    fmt.Println("error spawning python socket script", err)
+	}
+    }(ctx)
 
-    leftEye := gocv.NewCascadeClassifier()
-    leftEye.Load("aimodels/haarlefteye.xml")
-    defer leftEye.Close()
+    pythonHost := "127.0.0.1"
+    pythonPort := "49522"
+    
+    var conn net.Conn
 
-    rightEye := gocv.NewCascadeClassifier()
-    rightEye.Load("aimodels/haarrighteye.xml")
-    defer rightEye.Close()
+    for attempt := 1; attempt <= 4; attempt++ {
+	fmt.Printf("Attempting to connect (attempt %d/%d)...\n", attempt, 10)
+	
+	conn, err = net.Dial("tcp", pythonHost+":"+pythonPort)
+	if err == nil {
+	    fmt.Println("Connection successful!")
 
-    eyes := gocv.NewCascadeClassifier()
-    eyes.Load("aimodels/haareyes.xml")
-    defer eyes.Close()
+	    i, err := conn.Write(*imgData)
+	    if err != nil {
+		fmt.Println("Error sending image data:", err)
+		return false, err
+	    }
+	    fmt.Println(i)
+	    defer conn.Close()
+	    // Receive the boolean response from Python
+	    boolBuf, err := io.ReadAll(conn)
+	    if err != nil {
+		fmt.Println("Error receiving boolean response:", err)
+		return false, err
+	    }
+	    attempt = 10
+	    resultBool := boolBuf[0] != 0
+	    return resultBool, nil
+	}
 
-    mouth := gocv.NewCascadeClassifier()
-    mouth.Load("aimodels/haarmouth.xml")
-    defer mouth.Close()
+	fmt.Printf("Connection failed: %v\n", err)
+	time.Sleep(time.Second * 1) // Wait before the next attempt
+	//retryDelay *= 2        // Exponential backoff (optional)
 
+    }
+	return false, nil
+}
+
+
+func GetFaceImages(imgData *[]byte) (faceNum int, faceImages *[]*[]byte, err error)  {
+
+    haarCascade := gocv.NewCascadeClassifier()
+    haarCascade.Load("aimodels/haarfrontalface.xml")
+    defer haarCascade.Close()
     img, err := gocv.IMDecode(*imgData, gocv.IMReadColor)
     if err != nil {
 	return 0, nil, err
@@ -91,46 +151,32 @@ func HaarCascade(imgData *[]byte) (faceNum int, markedImage *[]byte, err error) 
 	return 0, nil, fmt.Errorf("Error loading image")
     }
     
-    imgRects := faces.DetectMultiScale(img)
-
+    imgRects := haarCascade.DetectMultiScale(img)
+    
+    faceNum = 0
+    var returnFaces []*[]byte
+    //Iterates through faces and adds them to the returned array
     for _, rect := range imgRects {
-	//draws rectangle around face
+	//Increases number of faces
+	faceNum++
+	//Draws rectangle around face
 	gocv.Rectangle(&img, rect, color.RGBA{255, 0, 0, 0}, 2)
 	
-	face := img.Region(rect)
-	
-	//draws rectangle around nose
-	noseBox := nose.DetectMultiScale(face)
-	gocv.Rectangle(&face, noseBox[0], color.RGBA{255, 0, 0, 0}, 2)
-	points := RectToFeature(&noseBox[0], "nose")
-	points.PrintPoints()
-
-	//draws rectangle around eyes
-	eyes := eyes.DetectMultiScale(face)
-	gocv.Rectangle(&face, eyes[0], color.RGBA{255, 0, 0, 0}, 2)
-	
-	// Region of interest for the lower half of the face
-	//halfFace := img.Region(image.Rect(rect.Min.X, rect.Min.Y, rect.Max.X, avg))
-
-	//draws rectangle around mouth
-	mouthBox := mouth.DetectMultiScale(face)
-	gocv.Rectangle(&face, mouthBox[0], color.RGBA{0, 0, 255, 0}, 2)
+	face, err := imageToBytes(img.Region(rect))
+	if err != nil {
+	    return 0, nil, err
+	}
+	_ = face
+	returnFaces = append(returnFaces, face)
     }
 
-    // Save the image with landmarks
+
+    /* Save the image with landmarks
     gocv.IMWrite("output_image2.jpg", img)
     if err != nil {
 	return 0, nil, err
     }
-    
-    //Convert mat object to []byte
-    newImg, err := img.ToImage()
-    if err != nil {
-	return 0, nil, err
-    }
-    var buf bytes.Buffer
-    _ = jpeg.Encode(&buf, newImg, nil)
-    returnImg := buf.Bytes()
+    */
 
-    return len(imgRects), &returnImg, err
+    return faceNum, &returnFaces, nil
 }

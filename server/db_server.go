@@ -54,6 +54,17 @@ func Get_Faces(ctx context.Context, db *sql.DB) (*FaceData, error) {
 
   return faceData, nil
 }
+
+func FaceDetected(ctx context.Context, db *sql.DB) (error) {
+
+  q := "INSERT INTO faces VALUES id, ;"
+  if _, err := db.QueryContext(ctx, q); err != nil {
+    return err
+  }
+
+  return nil
+}
+
 func Register_face(ctx context.Context, db *sql.DB) (error) {
 
   q := "INSERT INTO faces VALUES id, ;"
