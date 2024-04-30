@@ -1,18 +1,17 @@
 package server
 
 import (
-  "context"
-  "crypto/tls"
-  "database/sql"
-  "log"
-  "net"
-  "os"
-  "fmt"
+	"context"
+	"crypto/tls"
+	"database/sql"
+	"log"
+	"net"
+	"os"
 
-  pb "github.com/joeymhills/rpi-facial-detection/proto"
-  //vision "google.golang.org/genproto/googleapis/cloud/vision/v1p4beta1"
-  "google.golang.org/grpc"
-  "google.golang.org/grpc/credentials"
+	pb "github.com/joeymhills/rpi-facial-detection/proto"
+	//vision "google.golang.org/genproto/googleapis/cloud/vision/v1p4beta1"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 // Implement the ImageServiceServer interface
@@ -37,28 +36,13 @@ func HandleImage(db *sql.DB, imgBytes *[]byte) error {
 
   
   //Check for facial features 
-  numFaces, faces, err := GetFaceImages(imgBytes)
+  numFaces, err := ScanAndAnalyzeImage(imgBytes)
   if err != nil {
-    return  err
+    return err 
   }
 
-  //StoreImage(img, "test123.jpg")
   log.Println("Faces detected: ", numFaces)
   
-  if faces != nil {
-    for _, face := range *faces {
-      success, err := CheckFace(face, "lebron")
-      if err != nil{
-        log.Println(err)
-      }
-      if success {
-        fmt.Printf("Face recognized, welcome Lebron!")
-
-      } else {
-        fmt.Printf("Face not recognized, possible intruder.")
-      }
-    }
-  }
   return nil
 }
 

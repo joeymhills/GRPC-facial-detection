@@ -16,14 +16,14 @@ modelSavePath = f"python/savedModels/{sys.argv[1]}.keras"
 
 if os.path.exists(modelSavePath):
     sys.stderr.write("Name already taken! Please choose a new one")
+    sys.exit(1)  # Exit the program with an error code
 
 # Define num_classes
 num_classes = 2
 
 # Define paths to your image directories
-train_dir = 'trainimg'
-val_dir = 'testimg'
-
+train_dir = 'python/trainimg'
+val_dir = 'python/testimg'
 def load_images(directory):
     images = []
     labels = []
