@@ -99,10 +99,34 @@ func CheckFace(imgData *[]byte) ([]string, error) {
     return nil, fmt.Errorf("failed to connect after maximum attempts")
 }
 
-func spawnPythonScript(){
+// spawnPythonProcess spins a up a python script on a new goroutine
+// and opens a tcp socket that we will connect to with our go program
+// and send images to to be processed with our tensorflow models
+func spawnPythonProcess(){
+
+    // Get a list of files from the TensorFlow models directory
+    files, err := os.ReadDir("python/savedModels")
+    if err != nil {
+	fmt.Println("Error reading directory:", err)
+	return
+    }
+
+    // Build a comma-separated list of filenames
+    var models []string
+    for _, file := range files {
+	if !file.IsDir() {  // Ensure we're only dealing with files
+	    models = append(models, file.Name())
+	}
+    }
+
+    // Join all model filenames with a comma
+    modelsList := strings.Join(models, ",")
+
+    // Print the models list
+    fmt.Println("Models to process:", modelsList)
     //get list of models and give to the python command
-    cmd := exec.Command("python3", "python/test.py", "justin.keras,joey.keras,missy.keras")
-    _, err := cmd.StdoutPipe()
+    cmd := exec.Command("python3", "python/test.py", modelsList)
+    _, err = cmd.StdoutPipe()
     if err != nil {
 	fmt.Println("Error creating stdout pipe:", err)
     }
@@ -110,8 +134,7 @@ func spawnPythonScript(){
     cmd.Start()
 }
 
-func ScanAndAnalyzeImage(imgData *[]byte) (faceNum int, err error)  {
-
+func ScanImage(imgData *[]byte) (faceNum int, err error)  {
     haarCascade := gocv.NewCascadeClassifier()
     haarCascade.Load("aimodels/haarfrontalface.xml")
     defer haarCascade.Close()
@@ -123,35 +146,12 @@ func ScanAndAnalyzeImage(imgData *[]byte) (faceNum int, err error)  {
     if img.Empty() {
 	return 0, fmt.Errorf("Error loading image")
     }
-
-    // Get a list of files from the tensorflow models directory
-    files, err := os.ReadDir("python/savedModels")
-    if err != nil {
-	fmt.Print(err)
-    }
-
-    // Slice to store filenames
-    var models []string
-
-    // Iterate over the files and add their names to the slice
-    for _, file := range files {
-	if !file.IsDir() {
-	    models = append(models, file.Name())
-	}
-    }
-
-    // Print the filenames
-    fmt.Println("Files in the directory:")
-    for _, model := range models {
-	    fmt.Println(model)
-    }
+    //Starts python tcp listener to listen for image data to run on CNNs
+    go spawnPythonProcess()
     
     //Detects region of picture with face in it
     imgRects := haarCascade.DetectMultiScaleWithParams(img, 1.1, 3, 0, image.Point{200, 200}, image.Point{1500,1500})
     faceNum = 0
-    
-    //Starts python tcp listener to listen for image data to run on CNNs
-    //go spawnPythonScript()
 
     //Iterates through faces and adds them to the returned array
     for _, rect := range imgRects {

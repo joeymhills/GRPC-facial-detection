@@ -6,6 +6,8 @@ import (
   "fmt"
   "os"
   "log"
+  "bytes"
+  "net/http"
 
   _ "github.com/go-sql-driver/mysql"
 )
@@ -14,7 +16,6 @@ type FaceData struct {
   ids []int
   faces []string
 }
-
 
 //InitDb connects us to the sql server and returns the connection object
 func InitDb() (*sql.DB, error){
@@ -55,22 +56,40 @@ func Get_Faces(ctx context.Context, db *sql.DB) (*FaceData, error) {
   return faceData, nil
 }
 
-func FaceDetected(ctx context.Context, db *sql.DB) (error) {
+func Ins (ctx context.Context, db *sql.DB) (error) {
 
-  q := "INSERT INTO faces VALUES id, ;"
-  if _, err := db.QueryContext(ctx, q); err != nil {
-    return err
-  }
 
   return nil
 }
 
-func Register_face(ctx context.Context, db *sql.DB) (error) {
+//Receives imageData and a fileName and stores it in the gcp bucket
+func StoreImage(ctx context.Context, db *sql.DB, imageData *[]byte, fileName string) error {
+  
+  client := http.Client{}
+  url := fmt.Sprintf("https://storage.googleapis.com/upload/storage/v1/b/%s/o?uploadType=media&name=%s", os.Getenv("GCP_BUCKET_NAME"), fileName)
+  
+  r := bytes.NewReader(*imageData)
+  req, err := http.NewRequest(http.MethodPost, url, r)
+  if err != nil {
+    return err
+  }
+  // Set the Content-Type header
+  req.Header.Set("Content-Type", "application/octet-stream")
+
+  resp, err := client.Do(req)
+  if err != nil {
+    return err
+  }
+  defer resp.Body.Close()
+  
+  if resp.StatusCode != http.StatusOK {
+      log.Println("Upload failed. Status code", resp.StatusCode)
+  }
+
 
   q := "INSERT INTO faces VALUES id, ;"
   if _, err := db.QueryContext(ctx, q); err != nil {
     return err
   }
-
   return nil
 }
