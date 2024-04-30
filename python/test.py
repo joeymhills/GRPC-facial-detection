@@ -32,12 +32,16 @@ def preprocess_image(received_bytes):
     return img.reshape(1, 224, 224, 3)  # Add batch dimension
 
 
+def remove_extension(filename):
+    root, _ = os.path.splitext(filename)
+    return root
+
 #TODO: Add "Match Probability" as opposed to a boolean
 def process_image(image):
-    returnArray = []
-    for model in modelsArray:
+    passedModels = []
+    for modelName in modelsArray:
 
-        modelSavePath = f"python/savedModels/{model}"
+        modelSavePath = f"python/savedModels/{modelName}"
         model = tf.keras.models.load_model(modelSavePath)
 
         # Perform inference using the loaded model
@@ -47,12 +51,10 @@ def process_image(image):
 
         # Example processing: Check if prediction is a match (1) or not a match (0)
         if predicted_label == 1:
-            returnArray.append(1)
-            return True
-        else:
-            returnArray.append(0)
-            return False
+            strippedModel = remove_extension(modelName)
+            passedModels.append(strippedModel)
 
+    return passedModels
 
 
 def handle_client(conn, addr):
@@ -66,9 +68,11 @@ def handle_client(conn, addr):
     # Process the received image data
     image = preprocess_image(img_data)
     # Perform image processing and get boolean response
-    is_match = process_image(image)
-    # Send boolean response back to Go code
-    conn.sendall(is_match.to_bytes(1, 'big'))
+    passedModels = process_image(image)  # Ensure modelsArray is defined
+
+    # Convert list of passed models to a comma-separated string
+    response = ','.join(passedModels)
+    conn.sendall(response.encode())  # Send response back to Go code
     conn.close()
 
 

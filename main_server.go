@@ -24,8 +24,8 @@ func main(){
     if err != nil {
         fmt.Println(err) 
     }
-    //server.TestModelFromImage(db, "joey.jpg")
-    server.TrainModelFromMp4("vid/justin.mp4", "justin") 
+    server.TestModelFromImage(db, "joey.jpg")
+    //server.TrainModelFromMp4("vid/justin.mp4", "justin") 
 
     if err = server.InitGrpcServer(db); err != nil {
         log.Fatalln(err)

@@ -15,20 +15,23 @@ import (
 
 //Test function
 func TestModelFromImage(db *sql.DB, filePath string) {
-    file, err := os.Open(filePath) // Replace with the actual path to your image
+    
+    file, err := os.Open(filePath)
     if err != nil {
 	fmt.Println("Error opening image file:", err)
 	return
     }
     defer file.Close()
-    //Read the image data into a byte slice
+
+    // Read the image data into a byte slice
     imageData, err := jpeg.Decode(file)
     if err != nil {
 	fmt.Println("Error reading image file:", err)
 	return
     }
+
+    // Encode the image into JPEG format and write it to the buffer
     buf := new(bytes.Buffer)
-    //Encode the image into JPEG format and write it to the buffer
     err = jpeg.Encode(buf, imageData, nil)
     if err != nil {
 	fmt.Println("Error encoding image:", err)

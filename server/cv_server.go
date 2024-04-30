@@ -11,6 +11,8 @@ import (
     "os"
     "os/exec"
     "time"
+    "path/filepath"
+    "strings"
 
     _ "github.com/go-sql-driver/mysql"
 
@@ -45,7 +47,7 @@ func TrainModel(name string) error {
 //CheckFace is a function that will take in an img(as type *[]byte)
 //and return whether or not it was succesfully recognized by
 //any of the CNN's
-func CheckFace(imgData *[]byte) (bool, error) {
+func CheckFace(imgData *[]byte) ([]string, error) {
 
     pythonHost := "127.0.0.1"
     pythonPort := "49522"
@@ -72,35 +74,34 @@ func CheckFace(imgData *[]byte) (bool, error) {
 	i, err := conn.Write(*imgData)
 	if err != nil {
 	    fmt.Println("Error sending image data:", err)
-	    return false, err
+	    return nil, err
 	}
-	fmt.Println(i)
+	fmt.Println(i, " bytes sent")
 	defer conn.Close()
 
-	// Receive the boolean response from Python
-	boolBuf, err := io.ReadAll(conn)
+	// Receive the string response from Python
+	response, err := io.ReadAll(conn)
 	if err != nil {
-	    fmt.Println("Error receiving boolean response:", err)
-	    return false, err
+	    fmt.Println("Error receiving model names response:", err)
+	    return nil, err
 	}
 
-	if len(boolBuf) == 0 {
-	    fmt.Println("Received empty response TCP stream")
-	    return false, nil
+	if len(response) == 0 {
+	    fmt.Println("Received empty response from TCP stream")
+	    return nil, nil
 	}
-	var resultBool bool
-	resultBool = boolBuf[0] != 0
 
-	return resultBool, nil
-
+	// Convert the comma-separated string to a slice of strings
+	models := strings.Split(string(response), ",")
+	return models, nil
     }
 
-    return false, nil
+    return nil, fmt.Errorf("failed to connect after maximum attempts")
 }
 
 func spawnPythonScript(){
     //get list of models and give to the python command
-    cmd := exec.Command("python3", "python/test.py", "joey.keras,missy.keras")
+    cmd := exec.Command("python3", "python/test.py", "justin.keras,joey.keras,missy.keras")
     _, err := cmd.StdoutPipe()
     if err != nil {
 	fmt.Println("Error creating stdout pipe:", err)
@@ -150,7 +151,7 @@ func ScanAndAnalyzeImage(imgData *[]byte) (faceNum int, err error)  {
     faceNum = 0
     
     //Starts python tcp listener to listen for image data to run on CNNs
-    go spawnPythonScript()
+    //go spawnPythonScript()
 
     //Iterates through faces and adds them to the returned array
     for _, rect := range imgRects {
@@ -165,19 +166,20 @@ func ScanAndAnalyzeImage(imgData *[]byte) (faceNum int, err error)  {
 	}
 
 	// This is the code that actually checks for facial recognition
-	success, err := CheckFace(face)
+	names, err := CheckFace(face)
 	if err != nil{
 	    fmt.Println(err)
 	}
+	fmt.Println(names)
 
-	if success {
-	    fmt.Printf("Face recognized, welcome!\n")
+	if len(names) > 0 {
+	    fmt.Printf("Face recognized, welcome %s!\n", names[0])
 	    //Draws rectangle around face
 	    gocv.Rectangle(&img, rect, color.RGBA{0, 255, 0, 0}, 2)
 
-	    size := gocv.GetTextSize("Recognized", gocv.FontHersheyPlain, 1.2, 2)
+	    size := gocv.GetTextSize(names[0], gocv.FontHersheyPlain, 2.0, 3)
 	    pt := image.Pt(rect.Min.X+(rect.Min.X/2)-(size.X/2), rect.Min.Y-2)
-	    gocv.PutText(&img, "Recognized", pt, gocv.FontHersheyPlain, 1.2, color.RGBA{0, 255, 0, 1}, 2)
+	    gocv.PutText(&img, names[0], pt, gocv.FontHersheyPlain, 2.0, color.RGBA{0, 255, 0, 1}, 3)
 
 	} else {
 	    fmt.Printf("Face not recognized, possible intruder.\n")
@@ -185,9 +187,9 @@ func ScanAndAnalyzeImage(imgData *[]byte) (faceNum int, err error)  {
 	    //Draws rectangle around face
 	    gocv.Rectangle(&img, rect, color.RGBA{255, 0, 0, 0}, 2)
 
-	    size := gocv.GetTextSize("Not Recognized", gocv.FontHersheyPlain, 1.2, 2)
+	    size := gocv.GetTextSize("Not Recognized", gocv.FontHersheyPlain, 2.0, 3)
 	    pt := image.Pt(rect.Min.X+(rect.Min.X/2)-(size.X/2), rect.Min.Y-2)
-	    gocv.PutText(&img, "Not Recognized", pt, gocv.FontHersheyPlain, 1.2, color.RGBA{0, 255, 0, 1}, 2)
+	    gocv.PutText(&img, "Not Recognized", pt, gocv.FontHersheyPlain, 2.0, color.RGBA{0, 255, 0, 1}, 3)
 	}
     }
     gocv.IMWrite("output_image.jpg", img)
@@ -198,7 +200,25 @@ func ScanAndAnalyzeImage(imgData *[]byte) (faceNum int, err error)  {
     return faceNum, nil
 }
 
+func emptyDir(dirPath string) error {
+    files, err := os.ReadDir(dirPath)
+    if err != nil {
+	return err
+    }
+
+    for _, file := range files {
+	err := os.RemoveAll(filepath.Join(dirPath, file.Name()))
+	if err != nil {
+	    return err
+	}
+    }
+    return nil
+}
+
 func TrainModelFromMp4(filepath string, name string) {
+    
+    // Empties training image directory
+    emptyDir("python/trainimg/class_1")
 
     haarCascade := gocv.NewCascadeClassifier()
     haarCascade.Load("aimodels/haarfrontalface.xml")
