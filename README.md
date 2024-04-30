@@ -8,9 +8,17 @@ This project involves setting up a Raspberry Pi with a motion sensor and camera 
 
 In order to make use of the GCP AI Vision API you need to be on a virtual machine hosted on the Google Cloud running Debian linux
 
-### 2. Install Go
+### 2. Install Dependencies
 
 Ensure that Go programming language (>v1.22) is installed. Go installation instructions [here](https://go.dev/doc/install)
+
+also install opencv along with gocv
+
+create a python virtual environment
+
+pip install tensorflow opencv-python numpy
+
+
 
 ### 3. Clone the Repository
 

@@ -74,7 +74,7 @@ func HandleImage(db *sql.DB, imgBytes *[]byte) error {
   imageName := generateUniqueName()
 
   
-  err = StoreImage(ctx, db, &imgData, imageName)
+  err = StoreImage(ctx, db, &imgData, imageName+".jpg")
   if err != nil {
     log.Println("err storing image in GCP Bucket: ", err)
   }

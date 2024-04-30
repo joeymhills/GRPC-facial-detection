@@ -56,12 +56,6 @@ func Get_Faces(ctx context.Context, db *sql.DB) (*FaceData, error) {
   return faceData, nil
 }
 
-func Ins (ctx context.Context, db *sql.DB) (error) {
-
-
-  return nil
-}
-
 //Receives imageData and a fileName and stores it in the gcp bucket
 func StoreImage(ctx context.Context, db *sql.DB, imageData *[]byte, fileName string) error {
   
@@ -86,10 +80,12 @@ func StoreImage(ctx context.Context, db *sql.DB, imageData *[]byte, fileName str
       log.Println("Upload failed. Status code", resp.StatusCode)
   }
 
-
+  
+  /* Insert image into sql table
   q := "INSERT INTO faces VALUES id, ;"
   if _, err := db.QueryContext(ctx, q); err != nil {
     return err
   }
+  */
   return nil
 }
