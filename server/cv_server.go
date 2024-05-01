@@ -16,7 +16,6 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
-	"google.golang.org/grpc/authz/audit/stdout"
 
 	"gocv.io/x/gocv"
 )
