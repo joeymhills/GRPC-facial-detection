@@ -6,7 +6,9 @@ package main
 import (
     "fmt"
     "log"
+    "context"
     "github.com/charmbracelet/huh"
+    "github.com/charmbracelet/huh/spinner"
     "github.com/joeymhills/rpi-facial-detection/server"
     "github.com/joho/godotenv"
     "errors"
@@ -16,6 +18,7 @@ var (
     toppings []string
     sauceLevel int
     name string
+    filepath string
     instructions string
     discount bool
 )
@@ -52,6 +55,18 @@ func main(){
                     }
                     return nil
                 }),
+
+            huh.NewInput().
+                Title("Please enter file path to face scan scan video").
+                Value(&filepath).
+                // Validating fields is easy. The form will mark erroneous fields
+                // and display error messages accordingly.
+                Validate(func(str string) error {
+                    if str == "missy" {
+                        return errors.New("Sorry, that name has already been chosen.")
+                    }
+                    return nil
+                }),
             ),
         )
 
@@ -65,19 +80,33 @@ func main(){
         if err != nil {
             log.Fatal(err)
         }
+	ctx, cancel := context.WithCancel(context.Background())
+    
+    title := fmt.Sprintf("Training a CNN model for %s's face scan...", name)
+	s := spinner.New().Title(title).
+		Context(ctx)
+    
+    go s.Run()
 
-        server.TrainModelFromMp4("vid/justin.mp4", name) 
+	if err != nil {
+		log.Fatalln(err)
+        cancel()
+	}
+        server.TrainModelFromMp4(filepath, name) 
+        cancel()
+        fmt.Printf("Training success!\n")
+        return
     }
 
     db, err := server.InitDb()
     if err != nil{
         log.Fatalln(err)
     }
-    //err = server.ProcessTestImages() 
     if err != nil {
         fmt.Println(err) 
     }
-    server.TestModelFromImage(db, "joey.jpg")
+    
+    server.TestModelFromImage(db, "justin.jpg")
 
     if err = server.InitGrpcServer(db); err != nil {
         log.Fatalln(err)

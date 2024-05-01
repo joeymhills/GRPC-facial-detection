@@ -17,11 +17,6 @@ def process_arguments(arg_string):
     arguments = [arg.strip() for arg in arg_string.split(',')]
     return arguments
 
-def remove_extension(filename):
-    root, _ = os.path.splitext(filename)
-    return root
-
-
 modelsArray = process_arguments(sys.argv[1])
 
 
@@ -35,22 +30,39 @@ def preprocess_image(received_bytes):
     img = img.astype('float32') / 255.0  # Normalize pixel values
     return img.reshape(1, 224, 224, 3)  # Add batch dimension
 
+def remove_extension(model_name):
+    return model_name.replace(".keras", "")
+
 # Runs image against each of the CNNs
 def process_image(image):
     passedModels = []
-    for modelName in modelsArray:
 
+    # List to store (modelName, prediction) tuples
+    model_predictions = []
+
+    for modelName in modelsArray:
         modelSavePath = f"python/savedModels/{modelName}"
         model = tf.keras.models.load_model(modelSavePath)
 
         # Perform inference using the loaded model
         prediction = model.predict(image)
-        print("prediction for: ", model, prediction)
+        print("prediction for:", modelName, prediction)
         predicted_label = tf.argmax(prediction, axis=1).numpy()[0]
 
-        if predicted_label == 1:
-            strippedModel = remove_extension(modelName)
-            passedModels.append(strippedModel)
+        # Append (modelName, prediction) tuple to the list
+        model_predictions.append((modelName, prediction[0, 1]))  # Assuming prediction is a 2D array
+
+    # Sort the list of tuples based on the second element (prediction value)
+    sorted_models = sorted(model_predictions, key=lambda x: x[1], reverse=True)
+
+    # Print sorted predictions for debugging
+    print("Sorted predictions:", sorted_models)
+
+    # Extract the model names from the sorted list of tuples
+    passedModels = [model_tuple[0] for model_tuple in sorted_models if model_tuple[1] == 1.0]
+    
+    # Remove ".keras" suffix from model names
+    passedModels = [remove_extension(model_name) for model_name in passedModels]
 
     return passedModels
 
