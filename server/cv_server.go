@@ -14,7 +14,9 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"context"
 
+	"github.com/charmbracelet/huh/spinner"
 	_ "github.com/go-sql-driver/mysql"
 
 	"gocv.io/x/gocv"
@@ -56,15 +58,12 @@ func CheckFace(imgData *[]byte) ([]string, error) {
     var conn net.Conn
 
     for attempt := 1; attempt <= 5; attempt++ {
-	fmt.Printf("Attempting to connect (attempt %d/%d)...\n", attempt, 5)
-	
 	var err error
 	
 	// Dials python server
 	conn, err = net.Dial("tcp", pythonHost+":"+pythonPort)
 	if err != nil {
 	    // Wait before the next attempt
-	    fmt.Printf("Connection failed: %v, retrying in 2 seconds\n", err)
 	    time.Sleep(time.Second * 2)	
 	    continue
 	}
@@ -122,8 +121,6 @@ func spawnPythonProcess(){
     // Join all model filenames with a comma
     modelsList := strings.Join(models, ",")
 
-    // Print the models list
-    fmt.Println("Models to process:", modelsList)
     //get list of models and give to the python command
     cmd := exec.Command("python3", "python/test.py", modelsList)
     stdout, err := cmd.StdoutPipe()
@@ -138,8 +135,6 @@ func spawnPythonProcess(){
 	}
     }()
 
-
-
     cmd.Start()
 }
 
@@ -147,6 +142,16 @@ func ScanImage(imgData *[]byte) (faceNum int, err error)  {
     haarCascade := gocv.NewCascadeClassifier()
     haarCascade.Load("aimodels/haarfrontalface.xml")
     defer haarCascade.Close()
+
+
+    ctx, cancel := context.WithCancel(context.Background())
+    defer cancel()
+    
+    title := fmt.Sprintf("Analyzing image...")
+	s := spinner.New().Title(title).
+		Context(ctx)
+    
+    go s.Run()
 
     img, err := gocv.IMDecode(*imgData, gocv.IMReadColor)
     if err != nil {
@@ -209,6 +214,8 @@ func ScanImage(imgData *[]byte) (faceNum int, err error)  {
 	    gocv.PutText(&img, "Not Recognized", pt, gocv.FontHersheyPlain, 3.0, color.RGBA{0, 255, 0, 1}, 5)
 	}
     }
+
+    cancel()
     gocv.IMWrite("output_image.jpg", img)
     if err != nil {
 	return 0, err

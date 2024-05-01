@@ -68,7 +68,6 @@ def process_image(image):
 
 
 def handle_client(conn, addr):
-    print('Connected by', addr)
     while True:
         img_data = b''
         data = conn.recv(9000000)

@@ -28,7 +28,6 @@ func InitDb() (*sql.DB, error){
     return nil, err
   }
   
-  log.Println("Sql server connected")
   return db, nil
 }
 
