@@ -1,22 +1,24 @@
 package server
 
 import (
-    "bytes"
-    "fmt"
-    "image"
-    "image/color"
-    "image/jpeg"
-    "io"
-    "net"
-    "os"
-    "os/exec"
-    "time"
-    "path/filepath"
-    "strings"
+	"bufio"
+	"bytes"
+	"fmt"
+	"image"
+	"image/color"
+	"image/jpeg"
+	"io"
+	"net"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"time"
 
-    _ "github.com/go-sql-driver/mysql"
+	_ "github.com/go-sql-driver/mysql"
+	"google.golang.org/grpc/authz/audit/stdout"
 
-    "gocv.io/x/gocv"
+	"gocv.io/x/gocv"
 )
 func imageToBytes(img gocv.Mat) (*[]byte, error) {
     //Convert mat object to []byte
@@ -125,10 +127,19 @@ func spawnPythonProcess(){
     fmt.Println("Models to process:", modelsList)
     //get list of models and give to the python command
     cmd := exec.Command("python3", "python/test.py", modelsList)
-    _, err = cmd.StdoutPipe()
+    stdout, err := cmd.StdoutPipe()
     if err != nil {
 	fmt.Println("Error creating stdout pipe:", err)
     }
+    // Reads stdout to console
+    go func() {
+	s := bufio.NewScanner(stdout)
+	for s.Scan() {
+	    fmt.Println(s.Text())
+	}
+    }()
+
+
 
     cmd.Start()
 }
@@ -146,7 +157,7 @@ func ScanImage(imgData *[]byte) (faceNum int, err error)  {
 	return 0, fmt.Errorf("Error loading image")
     }
     //Starts python tcp listener to listen for image data to run on CNNs
-    //go spawnPythonProcess()
+    go spawnPythonProcess()
     
     //Detects region of picture with face in it
     imgRects := haarCascade.DetectMultiScaleWithParams(img, 1.1, 3, 0, image.Point{200, 200}, image.Point{1500,1500})
