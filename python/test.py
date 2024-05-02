@@ -19,6 +19,8 @@ def process_arguments(arg_string):
 
 modelsArray = process_arguments(sys.argv[1])
 
+def remove_extension(model_name):
+    return model_name.replace(".keras", "")
 
 # Define a function to preprocess the image
 def preprocess_image(received_bytes):
@@ -29,9 +31,6 @@ def preprocess_image(received_bytes):
     img = cv2.resize(img, (224, 224))
     img = img.astype('float32') / 255.0  # Normalize pixel values
     return img.reshape(1, 224, 224, 3)  # Add batch dimension
-
-def remove_extension(model_name):
-    return model_name.replace(".keras", "")
 
 # Runs image against each of the CNNs
 def process_image(image):

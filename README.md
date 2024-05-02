@@ -12,9 +12,9 @@ In order to make use of the GCP AI Vision API you need to be on a virtual machin
 
 Ensure that Go programming language (>v1.22) is installed. Go installation instructions [here](https://go.dev/doc/install)
 
-also install opencv along with gocv
+Also install [opencv](https://docs.opencv.org/4.x/d7/d9f/tutorial_linux_install.html) along with [gocv](https://gocv.io/getting-started/linux/)
 
-create a python virtual environment
+Create a python virtual environment
 
 pip install tensorflow opencv-python numpy
 
@@ -32,8 +32,13 @@ git clone https://github.com/joeymhills/GRPC-facial-detection.git
 Create a `.env` file in the root of your project directory and set the following environment variables(Replace with addess and port to your GCP virtual machine):
 
 ```plaintext
-GCP_ADDR=127.0.0.1
-GCP_PORT=:8080
+GCP_ADDR="34.66.85.133"
+GCP_PORT=":8080"
+GCP_BUCKET_NAME="dsc333-hw2"
+SQL_ADDR=35.193.123.84
+SQL_USER=joey
+SQL_PASS=2654
+SQL_NAME=db
 ```
 
 ### 5. Build and Run the Program

@@ -16,7 +16,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
-
+// Hashing function for creating file names
 func generateUniqueName() string {
 	// Get the current date and time as a string
 	currentTime := time.Now().UTC().Format(time.RFC3339Nano)
