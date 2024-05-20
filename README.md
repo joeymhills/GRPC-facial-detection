@@ -1,12 +1,13 @@
 # Raspberry Pi Facial Detection Project
+## Overview
 
-This project involves setting up a Raspberry Pi with a motion sensor and camera to capture images when motion is sensed. The captured images are then sent to a GoLang server running on a Google Cloud Platform (GCP) Compute Engine instance via gRPC. The server utilizes the Google AI Vision API to detect facial landmarks and determine whether the person in the image is a stranger or not.
+This project involves setting up a Raspberry Pi with a motion sensor and camera to capture images when motion is sensed. The captured images are then sent to a GoLang server running on a Google Cloud Platform (GCP) Compute Engine instance via gRPC. The server utilizes the OpenCV and TensorFlow to predict whether or not the face is an authorized person. A more detailed look into the project can be found in the slides [here](https://owlssouthernct-my.sharepoint.com/:p:/g/personal/hillsj3_southernct_edu/Ea9vDnWmG7JMpVtWc0n_JlkBxaOFLcqpfA_gY5P61IPeRQ?e=PifgCm).
 
 ## GCP Server Setup
 
 ### 1. Create a GCP Compute Engine Virtual Machine
 
-In order to make use of the GCP AI Vision API you need to be on a virtual machine hosted on the Google Cloud running Debian linux
+Create a virtual machine hosted on the Google Cloud running Debian linux
 
 ### 2. Install Dependencies
 
@@ -18,8 +19,6 @@ Create a python virtual environment
 
 pip install tensorflow opencv-python numpy
 
-
-
 ### 3. Clone the Repository
 
 Clone the GitHub repository for this project using the following command:
@@ -29,7 +28,7 @@ git clone https://github.com/joeymhills/GRPC-facial-detection.git
 ```
 ### 4. Set Environment Variables
 
-Create a `.env` file in the root of your project directory and set the following environment variables(Replace with addess and port to your GCP virtual machine):
+Create a `.env` file in the root of your project directory and set the following environment variables(Replace with your own credentials):
 
 ```plaintext
 GCP_ADDR="34.66.85.133"
@@ -85,6 +84,16 @@ Use the following commands to build and run the program on your Raspberry Pi:
 
 ```plaintext
 go build -tags rpi
+./rpi-facial-detection
+```
+The go build -tags rpi command builds the program specifically for Raspberry Pi, and ./rpi-facial-detection runs the compiled program.
+
+## Example Outputs
+
+![e7ab3732f5d687b9ab0d6b33e3987c861539385660af7865643346585f7e36a5](https://github.com/dsc333/dsc333-final-project-submissions-joeymhills/assets/69769618/efbe6fc7-2915-4672-99e8-054bb9cfdd53)
+
+![d4bf1f60d1d9fbe5b520284a6220926b2a0cda22fd25fe633fd1e77e3e08434a](https://github.com/dsc333/dsc333-final-project-submissions-joeymhills/assets/69769618/ce8b8ca4-623a-405b-9815-392e9a84380d)
+
 ./rpi-facial-detection
 ```
 The go build -tags rpi command builds the program specifically for Raspberry Pi, and ./rpi-facial-detection runs the compiled program.
