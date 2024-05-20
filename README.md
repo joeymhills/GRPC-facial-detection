@@ -93,7 +93,3 @@ The go build -tags rpi command builds the program specifically for Raspberry Pi,
 ![e7ab3732f5d687b9ab0d6b33e3987c861539385660af7865643346585f7e36a5](https://github.com/dsc333/dsc333-final-project-submissions-joeymhills/assets/69769618/efbe6fc7-2915-4672-99e8-054bb9cfdd53)
 
 ![d4bf1f60d1d9fbe5b520284a6220926b2a0cda22fd25fe633fd1e77e3e08434a](https://github.com/dsc333/dsc333-final-project-submissions-joeymhills/assets/69769618/ce8b8ca4-623a-405b-9815-392e9a84380d)
-
-./rpi-facial-detection
-```
-The go build -tags rpi command builds the program specifically for Raspberry Pi, and ./rpi-facial-detection runs the compiled program.
